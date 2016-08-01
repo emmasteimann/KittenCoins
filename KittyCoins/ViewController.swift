@@ -16,6 +16,8 @@ class ViewController: UICollectionViewController, KittenDataSourceDelegate, UIGe
   private var currentDraggingView:KittyCoinImageView?
   private var animator:UIDynamicAnimator?
   private var superSecretPipe:UIImageView?
+  private var gravitas:UIGravityBehavior?
+
 
   override func viewDidLoad() {
     super.viewDidLoad()
@@ -27,6 +29,9 @@ class ViewController: UICollectionViewController, KittenDataSourceDelegate, UIGe
     lpgr.delegate = self
     lpgr.delaysTouchesBegan = true
     animator = UIDynamicAnimator(referenceView: self.view)
+    gravitas = UIGravityBehavior()
+    animator!.addBehavior(gravitas!)
+
     self.collectionView?.addGestureRecognizer(lpgr)
 
 
@@ -34,7 +39,6 @@ class ViewController: UICollectionViewController, KittenDataSourceDelegate, UIGe
     superSecretPipe?.frame = CGRectInset(superSecretPipe!.frame, 500, 500)
     let newY = self.view.frame.height - superSecretPipe!.frame.height/2
     superSecretPipe?.center = CGPointMake(self.view.center.x, newY)
-//    superSecretPipe?.hidden = true
     self.view.addSubview(superSecretPipe!)
     superSecretPipe?.layer.zPosition = 999
   }
@@ -55,7 +59,8 @@ class ViewController: UICollectionViewController, KittenDataSourceDelegate, UIGe
         cell.contentView
         let imageCopy = cell.imageView.image?.copy() as! UIImage
         let newImageView = KittyCoinImageView(image: imageCopy)
-        let cellFrameInSuperView = self.collectionView?.convertRect(cell.frame, toView: self.view)
+        var cellFrameInSuperView = self.collectionView?.convertRect(cell.frame, toView: self.view)
+        cellFrameInSuperView = CGRectInset(cellFrameInSuperView!, 10, 10)
         newImageView.frame = cellFrameInSuperView!
         originalCenter = newImageView.center
         self.view.addSubview(newImageView)
@@ -75,9 +80,33 @@ class ViewController: UICollectionViewController, KittenDataSourceDelegate, UIGe
       }
     } else if gestureReconizer.state == UIGestureRecognizerState.Ended {
       if let currentDraggingView = currentDraggingView {
-        let gravity = UIGravityBehavior(items: [currentDraggingView])
-        animator?.addBehavior(gravity)
+        gravitas?.addItem(currentDraggingView)
+        let elastic = UIDynamicItemBehavior(items: [currentDraggingView])
+
+        elastic.elasticity = 0.6
+
+        let topRightLipOfPipe = CGPointMake(superSecretPipe!.frame.origin.x + superSecretPipe!.frame.size.width - 5, superSecretPipe!.frame.origin.y)
+        let topRightEdge = CGPointMake(superSecretPipe!.frame.origin.x + superSecretPipe!.frame.size.width, superSecretPipe!.frame.origin.y)
+
+        let topLeftLipOfPipe = CGPointMake(superSecretPipe!.frame.origin.x + 5, superSecretPipe!.frame.origin.y)
+        let topLeftEdge = CGPointMake(superSecretPipe!.frame.origin.x, superSecretPipe!.frame.origin.y)
+        animator?.addBehavior(elastic)
+
+        let bottomRightLipOfPipe = CGPointMake(superSecretPipe!.frame.origin.x + superSecretPipe!.frame.size.width - 5, superSecretPipe!.frame.origin.y + superSecretPipe!.frame.size.height)
+        let bottomRightEdge = CGPointMake(superSecretPipe!.frame.origin.x + superSecretPipe!.frame.size.width - 5, superSecretPipe!.frame.origin.y)
+
+        let bottomLeftLipOfPipe = CGPointMake(superSecretPipe!.frame.origin.x + 5, superSecretPipe!.frame.origin.y + superSecretPipe!.frame.size.height)
+        let bottomLeftEdge = CGPointMake(superSecretPipe!.frame.origin.x + 5, superSecretPipe!.frame.origin.y)
+        animator?.addBehavior(elastic)
+
+
         let collision = UICollisionBehavior(items: [currentDraggingView])
+        collision.addBoundaryWithIdentifier("pipeRight", fromPoint: topRightLipOfPipe, toPoint: topRightEdge)
+        collision.addBoundaryWithIdentifier("pipeLeft", fromPoint: topLeftLipOfPipe, toPoint: topLeftEdge)
+
+        collision.addBoundaryWithIdentifier("pipeRightB", fromPoint: bottomRightLipOfPipe, toPoint: bottomRightEdge)
+        collision.addBoundaryWithIdentifier("pipeLeftB", fromPoint: bottomLeftLipOfPipe, toPoint: bottomLeftEdge)
+
         collision.translatesReferenceBoundsIntoBoundary = true
         animator?.addBehavior(collision)
       }

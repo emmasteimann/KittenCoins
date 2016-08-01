@@ -1,4 +1,4 @@
 # KittenCoins
 
 
-![](KittenCoins.gif)
+![](KittyCat.gif)
